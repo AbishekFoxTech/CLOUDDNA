@@ -1,0 +1,73 @@
+{% extends 'app_base.html' %}
+{% block title %}Profile{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item active" aria-current="page">Profile</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="cdna-card p-4 text-center">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" class="avatar-circle mx-auto mb-3" alt="{{ user.username }}">
+      {% else %}
+        <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center bg-gradient-indigo text-white" style="font-size: 2.5rem;">
+          {{ user.username|first|upper }}
+        </div>
+      {% endif %}
+      <h5 class="fw-bold mb-0">{{ user.get_full_name|default:user.username }}</h5>
+      <p class="text-body-secondary mb-3">@{{ user.username }}</p>
+
+      <ul class="list-unstyled text-start small">
+        <li class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i>{{ user.email|default:"No email set" }}</li>
+        <li class="mb-2"><i class="bi bi-calendar3 me-2 text-primary"></i>Joined {{ user.date_joined|date:"F j, Y" }}</li>
+        {% if profile.job_title %}<li class="mb-2"><i class="bi bi-briefcase me-2 text-primary"></i>{{ profile.job_title }}</li>{% endif %}
+        {% if profile.organization %}<li class="mb-2"><i class="bi bi-building me-2 text-primary"></i>{{ profile.organization }}</li>{% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="cdna-card p-4">
+      <h5 class="fw-bold mb-4">Edit Profile</h5>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">First name</label>
+            {{ user_form.first_name }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Last name</label>
+            {{ user_form.last_name }}
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Email</label>
+          {{ user_form.email }}
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Job title</label>
+            {{ profile_form.job_title }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Organization</label>
+            {{ profile_form.organization }}
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Bio</label>
+          {{ profile_form.bio }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Profile image</label>
+          {{ profile_form.avatar }}
+        </div>
+        <button type="submit" class="btn btn-cdna-primary px-4">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-3">About {{ SITE_NAME }}</h1>
+      <p class="lead text-body-secondary">{{ SITE_TAGLINE }}</p>
+
+      <div class="cdna-card p-4 my-4">
+        <h5 class="fw-bold mb-2"><i class="bi bi-bullseye me-2 text-primary"></i>Our Mission</h5>
+        <p class="mb-0 text-body-secondary">
+          {{ SITE_NAME }} is a final-year engineering project that reimagines how organizations manage
+          their digital assets. By combining cloud-native storage with AI-driven analysis, we help
+          teams understand not just what they have, but how it all connects.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="cdna-card p-4 h-100">
+            <div class="cdna-feature-icon mb-3"><i class="bi bi-layers"></i></div>
+            <h6 class="fw-bold">Modern Architecture</h6>
+            <p class="text-body-secondary mb-0 small">Built on Django 5, SQLite, and Cloudinary for reliable, cloud-native asset delivery.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="cdna-card p-4 h-100">
+            <div class="cdna-feature-icon mb-3 bg-gradient-blue"><i class="bi bi-shield-check"></i></div>
+            <h6 class="fw-bold">Secure by Design</h6>
+            <p class="text-body-secondary mb-0 small">CSRF protection, validated authentication, and environment-based secrets management.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="cdna-card p-4 h-100">
+            <div class="cdna-feature-icon mb-3 bg-gradient-emerald"><i class="bi bi-cpu"></i></div>
+            <h6 class="fw-bold">AI-Ready</h6>
+            <p class="text-body-secondary mb-0 small">Dedicated engines for search, recommendations, and relationship intelligence.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="cdna-card p-4 h-100">
+            <div class="cdna-feature-icon mb-3 bg-gradient-amber"><i class="bi bi-mortarboard"></i></div>
+            <h6 class="fw-bold">Academic Project</h6>
+            <p class="text-body-secondary mb-0 small">Designed and engineered as a professional-grade final-year project.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

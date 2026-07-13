@@ -1,0 +1,45 @@
+{% extends 'app_base.html' %}
+{% block title %}Settings{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item active" aria-current="page">Settings</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="cdna-card p-4">
+      <h5 class="fw-bold mb-1"><i class="bi bi-shield-lock me-2 text-primary"></i>Change Password</h5>
+      <p class="text-body-secondary small mb-4">Choose a strong password you don't use elsewhere.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Current password</label>
+          {{ password_form.old_password }}
+          {% if password_form.old_password.errors %}<div class="text-danger small mt-1">{{ password_form.old_password.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">New password</label>
+          {{ password_form.new_password1 }}
+          {% if password_form.new_password1.errors %}<div class="text-danger small mt-1">{{ password_form.new_password1.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Confirm new password</label>
+          {{ password_form.new_password2 }}
+          {% if password_form.new_password2.errors %}<div class="text-danger small mt-1">{{ password_form.new_password2.errors }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-cdna-primary px-4">Update Password</button>
+      </form>
+    </div>
+
+    <div class="cdna-card p-4 mt-4">
+      <h5 class="fw-bold mb-1"><i class="bi bi-moon-stars me-2 text-primary"></i>Appearance</h5>
+      <p class="text-body-secondary small mb-3">Toggle dark mode using the button in the top navigation bar.</p>
+      <button class="btn btn-outline-secondary" type="button" data-theme-toggle>
+        <i class="bi bi-circle-half me-1"></i> Toggle Dark Mode
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}

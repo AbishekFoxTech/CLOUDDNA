@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="cdna-app-shell">
+  {% include 'partials/_sidebar.html' %}
+
+  <main class="cdna-main">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb cdna-breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        {% block breadcrumb_items %}{% endblock %}
+      </ol>
+    </nav>
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

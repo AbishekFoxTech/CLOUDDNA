@@ -1,0 +1,133 @@
+{% extends 'app_base.html' %}
+{% block title %}AI Insights - {{ document.title }}{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item"><a href="{% url 'documents:list' %}">Documents</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'documents:detail' document.pk %}">{{ document.title }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">AI Insights</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0"><i class="bi bi-cpu me-2 text-primary"></i>AI Insights: {{ document.title }}</h4>
+  <span class="badge fs-6
+    {% if document.ai_status == 'completed' %}bg-success-subtle text-success-emphasis
+    {% elif document.ai_status == 'processing' %}bg-warning-subtle text-warning-emphasis
+    {% elif document.ai_status == 'failed' %}bg-danger-subtle text-danger-emphasis
+    {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
+    {{ document.get_ai_status_display }}
+  </span>
+</div>
+
+{% if document.ai_status == 'failed' %}
+  <div class="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <strong>AI processing failed.</strong>
+      <div class="small mt-1">
+        {{ document.ai_error_message|default:"We couldn't process this document. This can happen with scanned/image-heavy files or unsupported content." }}
+      </div>
+    </div>
+    <form method="post" action="{% url 'ai_engine:retry' document.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger">
+        <i class="bi bi-arrow-clockwise me-1"></i> Retry Processing
+      </button>
+    </form>
+  </div>
+{% elif document.ai_status == 'pending' or document.ai_status == 'processing' %}
+  <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-hourglass-split me-1"></i> AI analysis hasn't completed for this document yet.</span>
+    <form method="post" action="{% url 'ai_engine:retry' document.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-warning">
+        <i class="bi bi-play-circle me-1"></i> Run AI Analysis
+      </button>
+    </form>
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="cdna-card p-3 p-md-4 mb-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">AI Summary</h6>
+      <p class="mb-0">{{ document.summary|default:"Not yet generated." }}</p>
+    </div>
+
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Extracted Text</h6>
+      {% if document.extracted_text %}
+        <div class="border rounded-3 p-3" style="max-height: 420px; overflow-y: auto; white-space: pre-wrap; font-size: 0.9rem;">{{ document.extracted_text }}</div>
+      {% else %}
+        <p class="text-body-secondary mb-0">No text has been extracted from this document yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cdna-card p-3 p-md-4 mb-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Document Intelligence</h6>
+      <ul class="list-unstyled small mb-0">
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Detected category</span>
+          <span class="badge bg-primary-subtle text-primary-emphasis">
+            {{ document.get_detected_category_display|default:"Not yet detected" }}
+          </span>
+        </li>
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Language</span>
+          <span class="fw-semibold">{{ document.language|upper|default:"Unknown" }}</span>
+        </li>
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Word count</span>
+          <span class="fw-semibold">{{ document.word_count }}</span>
+        </li>
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Reading time</span>
+          <span class="fw-semibold">{{ document.reading_time_display }}</span>
+        </li>
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Processing time</span>
+          <span class="fw-semibold">{{ document.processing_time|floatformat:2 }}s</span>
+        </li>
+        <li class="d-flex justify-content-between py-1 border-bottom">
+          <span class="text-body-secondary">Top similarity score</span>
+          <span class="fw-semibold">{{ document.similarity_score|floatformat:2 }}</span>
+        </li>
+        <li class="d-flex justify-content-between py-1">
+          <span class="text-body-secondary">Last AI scan</span>
+          <span class="fw-semibold">{{ document.last_ai_scan|date:"M j, Y, g:i a"|default:"Never" }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="cdna-card p-3 p-md-4 mb-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Keywords</h6>
+      {% if document.keyword_list %}
+        {% for kw in document.keyword_list %}
+          <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ kw }}</span>
+        {% endfor %}
+      {% else %}
+        <p class="text-body-secondary small mb-0">No keywords extracted yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Related Documents</h6>
+      {% if related_documents %}
+        <ul class="list-unstyled mb-0">
+          {% for related_doc, score in related_documents %}
+            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <a href="{% url 'documents:detail' related_doc.pk %}" class="text-decoration-none text-truncate" style="max-width: 70%;">
+                <i class="bi {{ related_doc.icon_class }} me-1"></i>{{ related_doc.title }}
+              </a>
+              <span class="badge bg-primary-subtle text-primary-emphasis">{{ score|floatformat:2 }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No related documents found yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

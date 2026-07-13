@@ -1,0 +1,230 @@
+{% extends 'app_base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item active" aria-current="page">Overview</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="cdna-card p-4 mb-4 bg-gradient-indigo text-white">
+  <div class="d-flex flex-wrap justify-content-between align-items-center">
+    <div>
+      <h4 class="fw-bold mb-1">Welcome back, {{ request.user.first_name|default:request.user.username }} 👋</h4>
+      <p class="mb-0 opacity-90">Here's what's happening with your digital assets today.</p>
+    </div>
+    <a href="{% url 'documents:upload' %}" class="btn btn-light text-primary fw-semibold mt-3 mt-md-0">
+      <i class="bi bi-cloud-upload me-1"></i> Quick Upload
+    </a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-3 col-md-6">
+    <div class="cdna-card p-4 h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="cdna-stat-icon bg-gradient-indigo"><i class="bi bi-file-earmark-text"></i></div>
+        <div>
+          <p class="text-body-secondary small mb-0">Total Documents</p>
+          <h3 class="fw-bold mb-0">{{ total_documents }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="cdna-card p-4 h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="cdna-stat-icon bg-gradient-blue"><i class="bi bi-hdd"></i></div>
+        <div>
+          <p class="text-body-secondary small mb-0">Storage Used</p>
+          <h3 class="fw-bold mb-0">{{ storage_used_display }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="cdna-card p-4 h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="cdna-stat-icon bg-gradient-emerald"><i class="bi bi-star-fill"></i></div>
+        <div>
+          <p class="text-body-secondary small mb-0">Favorite Documents</p>
+          <h3 class="fw-bold mb-0">{{ favorite_documents }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="cdna-card p-4 h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="cdna-stat-icon bg-gradient-amber"><i class="bi bi-calendar-plus"></i></div>
+        <div>
+          <p class="text-body-secondary small mb-0">Uploaded Today</p>
+          <h3 class="fw-bold mb-0">{{ documents_today }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="cdna-card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-cloud-arrow-up me-2 text-primary"></i>Recent Uploads</h5>
+        <a href="{% url 'documents:list' %}" class="small fw-semibold">View all</a>
+      </div>
+      {% if recent_uploads %}
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr class="text-body-secondary small">
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Uploaded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in recent_uploads %}
+                <tr>
+                  <td class="fw-semibold">
+                    <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none">
+                      {% if doc.favorite %}<i class="bi bi-star-fill text-warning me-1"></i>{% endif %}
+                      {{ doc.title }}
+                    </a>
+                  </td>
+                  <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ doc.file_type|upper }}</span></td>
+                  <td>{{ doc.size_display }}</td>
+                  <td class="text-body-secondary small">{{ doc.uploaded_at|date:"M j, Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-inbox text-body-secondary" style="font-size: 2.5rem;"></i>
+          <p class="text-body-secondary mt-2 mb-3">No documents uploaded yet.</p>
+          <a href="{% url 'documents:upload' %}" class="btn btn-cdna-primary btn-sm">Upload your first document</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cdna-card p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-activity me-2 text-primary"></i>Recent Activity</h5>
+      {% if recent_activity %}
+        <ul class="list-unstyled mb-0">
+          {% for activity in recent_activity %}
+            <li class="d-flex align-items-start gap-3 mb-3">
+              <div class="cdna-stat-icon bg-gradient-indigo" style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi {{ activity.icon }}"></i>
+              </div>
+              <div>
+                <p class="mb-0 small">{{ activity.text }}</p>
+                <p class="mb-0 text-body-secondary" style="font-size: 0.75rem;">{{ activity.timestamp|timesince }} ago</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No recent activity yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6">
+        <div class="cdna-card p-3 h-100">
+          <div class="d-flex align-items-center gap-2">
+            <div class="cdna-stat-icon bg-gradient-indigo" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-cpu"></i></div>
+            <div>
+              <p class="text-body-secondary small mb-0">Processed</p>
+              <h5 class="fw-bold mb-0">{{ documents_processed }}</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="cdna-card p-3 h-100">
+          <div class="d-flex align-items-center gap-2">
+            <div class="cdna-stat-icon bg-gradient-amber" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+              <p class="text-body-secondary small mb-0">Pending AI</p>
+              <h5 class="fw-bold mb-0">{{ pending_ai_processing }}</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cdna-card p-4">
+      <h5 class="fw-bold mb-2"><i class="bi bi-diagram-3 me-2 text-primary"></i>Relationship Graph</h5>
+      <div class="d-flex flex-column align-items-center justify-content-center text-center py-4" style="background: var(--cdna-bg); border-radius: 0.75rem;">
+        <i class="bi bi-diagram-3 text-body-secondary" style="font-size: 2.5rem;"></i>
+        <p class="text-body-secondary small mt-2 mb-0">
+          Relationship mapping will appear here once the AI Relationship Engine analyzes your documents.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-4">
+    <div class="cdna-card p-4 h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-tags me-2 text-primary"></i>Most Common Categories</h5>
+      {% if most_common_categories %}
+        <ul class="list-unstyled mb-0">
+          {% for cat in most_common_categories %}
+            <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
+              <span class="small">{{ cat.label }}</span>
+              <span class="badge bg-primary-subtle text-primary-emphasis">{{ cat.count }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No categories detected yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="cdna-card p-4 h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-key me-2 text-primary"></i>Most Frequent Keywords</h5>
+      {% if most_frequent_keywords %}
+        <div>
+          {% for keyword, count in most_frequent_keywords %}
+            <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ keyword }} ({{ count }})</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No keywords extracted yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="cdna-card p-4 h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Recent AI Activity</h5>
+      {% if recent_ai_activity %}
+        <ul class="list-unstyled mb-0">
+          {% for doc in recent_ai_activity %}
+            <li class="py-1 border-bottom">
+              <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none small fw-semibold d-block text-truncate">
+                {{ doc.title }}
+              </a>
+              <span class="text-body-secondary" style="font-size: 0.75rem;">
+                {{ doc.get_detected_category_display|default:"Uncategorized" }} &middot; {{ doc.last_ai_scan|timesince }} ago
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No AI activity yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
