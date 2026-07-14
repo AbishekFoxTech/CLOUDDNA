@@ -8,108 +8,141 @@
 {% endblock %}
 
 {% block content %}
-<div class="row g-4">
-  <div class="col-lg-7">
-    <div class="cdna-card p-3 p-md-4">
-      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Preview</h6>
-      <div class="d-flex align-items-center justify-content-center rounded-3" style="background: var(--cdna-bg); min-height: 360px;">
-        {% if document.is_image %}
-          <img src="{{ document.file.url }}" alt="{{ document.title }}" class="img-fluid rounded-3" style="max-height: 480px;">
-        {% elif document.is_pdf %}
-          <iframe src="{{ document.file.url }}#toolbar=0&navpanes=0" title="{{ document.title }}" style="width: 100%; height: 480px; border: none;" class="rounded-3"></iframe>
-        {% else %}
-          <div class="text-center py-5">
-            <i class="bi {{ document.icon_class }} text-body-secondary" style="font-size: 4rem;"></i>
-            <p class="text-body-secondary mt-3 mb-0">Preview not available for this file type.</p>
-            <a href="{% url 'documents:download' document.pk %}" class="btn btn-cdna-primary btn-sm mt-3">
-              <i class="bi bi-download me-1"></i> Download to view
-            </a>
-          </div>
-        {% endif %}
-      </div>
-    </div>
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1">{{ document.title }}</h4>
+    <span class="badge bg-primary-subtle text-primary-emphasis">{{ document.get_category_display }}</span>
+    <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ document.file_type|upper }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary favorite-toggle-btn"
+            data-url="{% url 'documents:toggle_favorite' document.pk %}" aria-label="Toggle favorite">
+      <i class="bi {% if document.favorite %}bi-star-fill text-warning{% else %}bi-star{% endif %}"></i>
+    </button>
+    <a href="{% url 'documents:download' document.pk %}" class="btn btn-cdna-primary">
+      <i class="bi bi-download me-1"></i> Download
+    </a>
+    <a href="{% url 'documents:rename' document.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i> Rename
+    </a>
+    <a href="{% url 'documents:delete' document.pk %}" class="btn btn-outline-danger">
+      <i class="bi bi-trash me-1"></i> Delete
+    </a>
+  </div>
+</div>
 
-    <div class="cdna-card p-3 p-md-4 mt-4">
-      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Description</h6>
-      <p class="mb-0">{{ document.description|default:"No description provided." }}</p>
+<ul class="nav nav-tabs mb-4" id="docTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">
+      <i class="bi bi-file-earmark-text me-1"></i> Overview
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="ai-tab" data-bs-toggle="tab" data-bs-target="#tab-ai" type="button" role="tab">
+      <i class="bi bi-cpu me-1"></i> AI Insights
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="relationships-tab" data-bs-toggle="tab" data-bs-target="#tab-relationships" type="button" role="tab">
+      <i class="bi bi-diagram-3 me-1"></i> Relationships
+      {% if related_documents %}<span class="badge bg-primary-subtle text-primary-emphasis ms-1">{{ related_documents|length }}</span>{% endif %}
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#tab-activity" type="button" role="tab">
+      <i class="bi bi-clock-history me-1"></i> Activity
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="recommendations-tab" data-bs-toggle="tab" data-bs-target="#tab-recommendations" type="button" role="tab">
+      <i class="bi bi-lightbulb me-1"></i> Recommendations
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="docTabsContent">
+
+  {# ---------------- Overview ---------------- #}
+  <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="cdna-card p-3 p-md-4">
+          <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Preview</h6>
+          <div class="d-flex align-items-center justify-content-center rounded-3" style="background: var(--cdna-bg); min-height: 360px;">
+            {% if document.is_image %}
+              <img src="{{ document.file.url }}" alt="{{ document.title }}" class="img-fluid rounded-3" style="max-height: 480px;">
+            {% elif document.is_pdf %}
+              <iframe src="{{ document.file.url }}#toolbar=0&navpanes=0" title="{{ document.title }}" style="width: 100%; height: 480px; border: none;" class="rounded-3"></iframe>
+            {% else %}
+              <div class="text-center py-5">
+                <i class="bi {{ document.icon_class }} text-body-secondary" style="font-size: 4rem;"></i>
+                <p class="text-body-secondary mt-3 mb-0">Preview not available for this file type.</p>
+                <a href="{% url 'documents:download' document.pk %}" class="btn btn-cdna-primary btn-sm mt-3">
+                  <i class="bi bi-download me-1"></i> Download to view
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="cdna-card p-3 p-md-4 mt-4">
+          <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Description</h6>
+          <p class="mb-0">{{ document.description|default:"No description provided." }}</p>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="cdna-card p-3 p-md-4">
+          <ul class="list-unstyled small mb-3">
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">File size</span>
+              <span class="fw-semibold">{{ document.size_display }}</span>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Uploaded</span>
+              <span class="fw-semibold">{{ document.uploaded_at|date:"M j, Y, g:i a" }}</span>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Last modified</span>
+              <span class="fw-semibold">{{ document.updated_at|date:"M j, Y, g:i a" }}</span>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Status</span>
+              <span class="badge
+                {% if document.status == 'ready' %}bg-success-subtle text-success-emphasis
+                {% elif document.status == 'processing' %}bg-warning-subtle text-warning-emphasis
+                {% elif document.status == 'failed' %}bg-danger-subtle text-danger-emphasis
+                {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
+                {{ document.get_status_display }}
+              </span>
+            </li>
+            <li class="d-flex justify-content-between py-1">
+              <span class="text-body-secondary">Cloudinary link</span>
+              {% if document.cloudinary_url %}
+                <a href="{{ document.cloudinary_url }}" target="_blank" rel="noopener" class="text-truncate" style="max-width: 220px;">
+                  {{ document.cloudinary_url }}
+                </a>
+              {% else %}
+                <span class="text-body-secondary">Local storage</span>
+              {% endif %}
+            </li>
+          </ul>
+
+          {% if document.tag_list %}
+            <div>
+              {% for tag in document.tag_list %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">#{{ tag }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="col-lg-5">
-    <div class="cdna-card p-3 p-md-4 mb-4">
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <h5 class="fw-bold mb-0">{{ document.title }}</h5>
-        <button type="button" class="btn btn-link p-0 favorite-toggle-btn"
-                data-url="{% url 'documents:toggle_favorite' document.pk %}" aria-label="Toggle favorite">
-          <i class="bi {% if document.favorite %}bi-star-fill text-warning{% else %}bi-star{% endif %} fs-3"></i>
-        </button>
-      </div>
-
-      <ul class="list-unstyled small mb-4">
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Category</span>
-          <span class="badge bg-primary-subtle text-primary-emphasis">{{ document.get_category_display }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">File type</span>
-          <span class="fw-semibold">{{ document.file_type|upper }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">File size</span>
-          <span class="fw-semibold">{{ document.size_display }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Uploaded</span>
-          <span class="fw-semibold">{{ document.uploaded_at|date:"M j, Y, g:i a" }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Last modified</span>
-          <span class="fw-semibold">{{ document.updated_at|date:"M j, Y, g:i a" }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Status</span>
-          <span class="badge
-            {% if document.status == 'ready' %}bg-success-subtle text-success-emphasis
-            {% elif document.status == 'processing' %}bg-warning-subtle text-warning-emphasis
-            {% elif document.status == 'failed' %}bg-danger-subtle text-danger-emphasis
-            {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
-            {{ document.get_status_display }}
-          </span>
-        </li>
-        <li class="d-flex justify-content-between py-1">
-          <span class="text-body-secondary">Cloudinary link</span>
-          {% if document.cloudinary_url %}
-            <a href="{{ document.cloudinary_url }}" target="_blank" rel="noopener" class="text-truncate" style="max-width: 220px;">
-              {{ document.cloudinary_url }}
-            </a>
-          {% else %}
-            <span class="text-body-secondary">Local storage</span>
-          {% endif %}
-        </li>
-      </ul>
-
-      {% if document.tag_list %}
-        <div class="mb-3">
-          {% for tag in document.tag_list %}
-            <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">#{{ tag }}</span>
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'documents:download' document.pk %}" class="btn btn-cdna-primary flex-fill">
-          <i class="bi bi-download me-1"></i> Download
-        </a>
-        <a href="{% url 'documents:rename' document.pk %}" class="btn btn-outline-secondary">
-          <i class="bi bi-pencil me-1"></i> Rename
-        </a>
-        <a href="{% url 'documents:delete' document.pk %}" class="btn btn-outline-danger">
-          <i class="bi bi-trash me-1"></i> Delete
-        </a>
-      </div>
-    </div>
-
-    <div class="cdna-card p-3 p-md-4 mb-4">
+  {# ---------------- AI Insights ---------------- #}
+  <div class="tab-pane fade" id="tab-ai" role="tabpanel">
+    <div class="cdna-card p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-bold text-body-secondary small text-uppercase mb-0">AI Insights</h6>
         <span class="badge
@@ -136,11 +169,8 @@
       {% elif document.ai_status == 'pending' or document.ai_status == 'processing' %}
         <div class="alert alert-warning small py-2 d-flex justify-content-between align-items-center gap-2">
           <span>
-            {% if document.ai_status == 'pending' %}
-              This document hasn't been analyzed yet.
-            {% else %}
-              AI analysis appears to be stuck - you can restart it.
-            {% endif %}
+            {% if document.ai_status == 'pending' %}This document hasn't been analyzed yet.
+            {% else %}AI analysis appears to be stuck - you can restart it.{% endif %}
           </span>
           <form method="post" action="{% url 'ai_engine:retry' document.pk %}" class="m-0">
             {% csrf_token %}
@@ -151,60 +181,155 @@
         </div>
       {% endif %}
 
-      <ul class="list-unstyled small mb-3">
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Detected category</span>
-          <span class="badge bg-primary-subtle text-primary-emphasis">
-            {{ document.get_detected_category_display|default:"Not yet detected" }}
-          </span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Language</span>
-          <span class="fw-semibold">{{ document.language|upper|default:"Unknown" }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1 border-bottom">
-          <span class="text-body-secondary">Word count</span>
-          <span class="fw-semibold">{{ document.word_count }}</span>
-        </li>
-        <li class="d-flex justify-content-between py-1">
-          <span class="text-body-secondary">Reading time</span>
-          <span class="fw-semibold">{{ document.reading_time_display }}</span>
-        </li>
-      </ul>
+      <div class="row">
+        <div class="col-md-6">
+          <ul class="list-unstyled small mb-3">
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Detected category</span>
+              <span class="badge bg-primary-subtle text-primary-emphasis">
+                {{ document.get_detected_category_display|default:"Not yet detected" }}
+              </span>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Language</span>
+              <span class="fw-semibold">{{ document.language|upper|default:"Unknown" }}</span>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span class="text-body-secondary">Word count</span>
+              <span class="fw-semibold">{{ document.word_count }}</span>
+            </li>
+            <li class="d-flex justify-content-between py-1">
+              <span class="text-body-secondary">Reading time</span>
+              <span class="fw-semibold">{{ document.reading_time_display }}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <p class="text-body-secondary small mb-1 fw-semibold">Keywords</p>
+          {% if document.keyword_list %}
+            <div class="mb-3">
+              {% for kw in document.keyword_list %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ kw }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="small text-body-secondary mb-3">Not yet extracted.</p>
+          {% endif %}
+        </div>
+      </div>
 
       <p class="text-body-secondary small mb-1 fw-semibold">Summary</p>
       <p class="small mb-3">{{ document.summary|default:"Not yet generated." }}</p>
 
-      <p class="text-body-secondary small mb-1 fw-semibold">Keywords</p>
-      {% if document.keyword_list %}
-        <div class="mb-3">
-          {% for kw in document.keyword_list %}
-            <span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">{{ kw }}</span>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="small text-body-secondary mb-3">Not yet extracted.</p>
-      {% endif %}
-
-      {% if related_documents %}
-        <p class="text-body-secondary small mb-1 fw-semibold">Related Documents</p>
-        <ul class="list-unstyled small mb-3">
-          {% for related_doc, score in related_documents %}
-            <li class="d-flex justify-content-between py-1 border-bottom">
-              <a href="{% url 'documents:detail' related_doc.pk %}" class="text-decoration-none text-truncate" style="max-width: 70%;">
-                {{ related_doc.title }}
-              </a>
-              <span class="badge bg-primary-subtle text-primary-emphasis">{{ score|floatformat:2 }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-
-      <a href="{% url 'ai_engine:insights' document.pk %}" class="btn btn-sm btn-outline-primary w-100">
+      <a href="{% url 'ai_engine:insights' document.pk %}" class="btn btn-sm btn-outline-primary">
         <i class="bi bi-cpu me-1"></i> View Full AI Insights
       </a>
     </div>
   </div>
+
+  {# ---------------- Relationships ---------------- #}
+  <div class="tab-pane fade" id="tab-relationships" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="cdna-card p-3 p-md-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-body-secondary small text-uppercase mb-0">Related Documents</h6>
+            <a href="{% url 'relationships:graph' %}?focus={{ document.pk }}" class="small fw-semibold">
+              <i class="bi bi-diagram-3 me-1"></i>View in Graph
+            </a>
+          </div>
+          {% if related_documents %}
+            <ul class="list-unstyled mb-0">
+              {% for related_doc, score, rel_type, rel_pk in related_documents %}
+                <li class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2">
+                  <a href="{% url 'documents:detail' related_doc.pk %}" class="text-decoration-none text-truncate" style="max-width: 40%;">
+                    <i class="bi {{ related_doc.icon_class }} me-1"></i>{{ related_doc.title }}
+                  </a>
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ rel_type|capfirst }}</span>
+                  <span class="badge bg-primary-subtle text-primary-emphasis">{{ score|floatformat:2 }}</span>
+                  {% if rel_type == 'manual' %}
+                    <form method="post" action="{% url 'relationships:delete_relationship' rel_pk %}" class="m-0">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Unlink">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-body-secondary small mb-0">No related documents found yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="cdna-card p-3 p-md-4">
+          <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Link Another Document</h6>
+          <form method="post" action="{% url 'relationships:create_manual_link' %}">
+            {% csrf_token %}
+            <input type="hidden" name="document_id" value="{{ document.pk }}">
+            <select name="related_document_id" class="form-select form-select-sm mb-2" required>
+              <option value="">Choose a document...</option>
+              {% for other in other_documents %}
+                <option value="{{ other.pk }}">{{ other.title }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-cdna-primary w-100">
+              <i class="bi bi-link-45deg me-1"></i> Link
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------- Activity ---------------- #}
+  <div class="tab-pane fade" id="tab-activity" role="tabpanel">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Activity for this Document</h6>
+      {% if document_activity %}
+        <ul class="list-unstyled mb-0">
+          {% for entry in document_activity %}
+            <li class="d-flex justify-content-between py-2 border-bottom">
+              <span class="small">
+                <span class="badge bg-secondary-subtle text-secondary-emphasis me-2">{{ entry.get_event_type_display }}</span>
+                {{ entry.description }}
+              </span>
+              <span class="text-body-secondary small text-nowrap">{{ entry.created_at|timesince }} ago</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No activity recorded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------- Recommendations ---------------- #}
+  <div class="tab-pane fade" id="tab-recommendations" role="tabpanel">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">You Might Also Like</h6>
+      {% if recommended_documents %}
+        <div class="row g-3">
+          {% for rec_doc, reason in recommended_documents %}
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 h-100">
+                <a href="{% url 'recommendations:click' rec_doc.pk %}" class="text-decoration-none fw-semibold d-block mb-1 text-truncate">
+                  <i class="bi {{ rec_doc.icon_class }} me-1"></i>{{ rec_doc.title }}
+                </a>
+                <p class="text-body-secondary small mb-0">{{ reason }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-body-secondary small mb-0">Nothing to recommend yet - upload and view more documents to unlock suggestions.</p>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 

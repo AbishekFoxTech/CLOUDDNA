@@ -1,0 +1,96 @@
+{% extends 'app_base.html' %}
+{% block title %}Recommendations{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item active" aria-current="page">Recommendations</li>
+{% endblock %}
+
+{% block content %}
+<h4 class="fw-bold mb-4"><i class="bi bi-lightbulb me-2 text-primary"></i>Recommendations</h4>
+
+<div class="cdna-card p-3 p-md-4 mb-4">
+  <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Recommended for You</h6>
+  {% if recommended %}
+    <div class="row g-3">
+      {% for doc, reason in recommended %}
+        <div class="col-md-3 col-sm-6">
+          <a href="{% url 'recommendations:click' doc.pk %}" class="text-decoration-none">
+            <div class="border rounded-3 p-3 h-100">
+              <i class="bi {{ doc.icon_class }} text-primary mb-2 d-block" style="font-size: 1.4rem;"></i>
+              <p class="fw-semibold small mb-1 text-truncate">{{ doc.title }}</p>
+              <p class="text-body-secondary mb-0" style="font-size: 0.75rem;">{{ reason }}</p>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-body-secondary small mb-0">Upload and view a few more documents to unlock personalized recommendations.</p>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="cdna-card p-3 p-md-4 h-100">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">
+        Related Documents
+        {% if related_source %}<span class="fw-normal text-body-secondary">to "{{ related_source.title }}"</span>{% endif %}
+      </h6>
+      {% if related_documents %}
+        <ul class="list-unstyled mb-0">
+          {% for doc, score, rel_type, rel_pk in related_documents %}
+            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none text-truncate" style="max-width: 55%;">{{ doc.title }}</a>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ rel_type|capfirst }}</span>
+              <span class="badge bg-primary-subtle text-primary-emphasis">{{ score|floatformat:2 }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">View a document to see what's related to it here.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="cdna-card p-3 p-md-4 h-100">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Recently Viewed</h6>
+      {% if recently_viewed %}
+        <ul class="list-unstyled mb-0">
+          {% for doc in recently_viewed %}
+            <li class="py-2 border-bottom">
+              <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none">
+                <i class="bi {{ doc.icon_class }} me-1"></i>{{ doc.title }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-body-secondary small mb-0">You haven't viewed any documents yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-12">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Popular Documents</h6>
+      {% if popular_documents %}
+        <div class="row g-3">
+          {% for doc in popular_documents %}
+            <div class="col-md-3 col-sm-6">
+              <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none">
+                <div class="border rounded-3 p-3 h-100">
+                  <i class="bi {{ doc.icon_class }} text-primary mb-2 d-block" style="font-size: 1.4rem;"></i>
+                  <p class="fw-semibold small mb-0 text-truncate">{{ doc.title }}</p>
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-body-secondary small mb-0">No view activity yet - popular documents will appear here once you start browsing.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

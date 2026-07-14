@@ -1,0 +1,17 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+  <div class="module" style="margin-bottom: 15px; padding: 12px 16px;">
+    <div style="margin-bottom: 8px;"><strong>AI Statistics:</strong>
+      {{ ai_processed_count }} / {{ ai_total_documents }} documents processed
+      (avg {{ ai_avg_processing_time }}s)
+    </div>
+    <div style="margin-bottom: 8px;"><strong>Total activity events:</strong> {{ total_activity }}</div>
+    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+      {% for row in event_breakdown %}
+        <div>{{ row.label }}: <strong>{{ row.count }}</strong></div>
+      {% endfor %}
+    </div>
+  </div>
+  {{ block.super }}
+{% endblock %}

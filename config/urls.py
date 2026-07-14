@@ -16,6 +16,8 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('documents/', include('documents.urls')),
     path('ai/', include('ai_engine.urls')),
+    path('relationships/', include('relationships.urls')),
+    path('recommendations/', include('recommendations.urls')),
 ]
 
 if settings.DEBUG:

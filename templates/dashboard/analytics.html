@@ -1,0 +1,116 @@
+{% extends 'app_base.html' %}
+{% load static %}
+{% block title %}Analytics{% endblock %}
+
+{% block breadcrumb_items %}
+  <li class="breadcrumb-item active" aria-current="page">Analytics</li>
+{% endblock %}
+
+{% block content %}
+<h4 class="fw-bold mb-4"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Analytics</h4>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Total Uploads</p>
+      <h4 class="fw-bold mb-0">{{ total_documents }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Favorites</p>
+      <h4 class="fw-bold mb-0">{{ favorite_documents }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Storage Used</p>
+      <h4 class="fw-bold mb-0">{{ storage_used_display }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Avg Document Size</p>
+      <h4 class="fw-bold mb-0">{{ avg_document_size_display }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Avg Processing Time</p>
+      <h4 class="fw-bold mb-0">{{ avg_processing_time }}s</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">AI Processed</p>
+      <h4 class="fw-bold mb-0">{{ ai_processed_percentage }}%</h4>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="cdna-card p-3 h-100">
+      <p class="text-body-secondary small mb-1">Relationships</p>
+      <h4 class="fw-bold mb-0">{{ relationship_count }}</h4>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Uploads by Category</h6>
+      <canvas id="categoryPieChart" style="max-height: 280px;"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">AI Processing Status</h6>
+      <canvas id="aiStatusDoughnutChart" style="max-height: 280px;"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Uploads by Month</h6>
+      <canvas id="monthLineChart" style="max-height: 280px;"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="cdna-card p-3 p-md-4">
+      <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Most Common Keywords</h6>
+      <canvas id="keywordBarChart" style="max-height: 280px;"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="cdna-card p-3 p-md-4">
+  <h6 class="fw-bold text-body-secondary small text-uppercase mb-3">Most Viewed Documents</h6>
+  {% if most_viewed %}
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr class="text-body-secondary small"><th>Document</th><th>Views</th></tr>
+        </thead>
+        <tbody>
+          {% for row in most_viewed %}
+            <tr>
+              <td><a href="{% url 'documents:detail' row.document.pk %}" class="text-decoration-none">{{ row.document.title }}</a></td>
+              <td>{{ row.views }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-body-secondary small mb-0">No views recorded yet.</p>
+  {% endif %}
+</div>
+
+{{ category_chart|json_script:"category-chart-data" }}
+{{ month_chart|json_script:"month-chart-data" }}
+{{ ai_status_chart|json_script:"ai-status-chart-data" }}
+{{ keyword_chart|json_script:"keyword-chart-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/analytics.js' %}"></script>
+{% endblock %}

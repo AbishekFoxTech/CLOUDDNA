@@ -98,12 +98,30 @@ def process_document(document):
     )
     document.refresh_from_db()
 
+    # Snapshot manual relationship links before compute_and_store_similarities
+    # clears this document's rows to recompute TF-IDF matches, so they can
+    # be restored afterward (see relationships.services.classify_relationships).
+    try:
+        from relationships.services import get_manual_relationships_snapshot
+        manual_snapshot = get_manual_relationships_snapshot(document)
+    except Exception:
+        logger.exception('Could not snapshot manual relationships for document %s', document.pk)
+        manual_snapshot = []
+
     try:
         similarity_service.compute_and_store_similarities(document)
     except Exception:
         # Similarity is an enhancement on top of a successful extraction -
         # don't let it flip an otherwise-successful run into a failure.
         logger.exception('Similarity computation failed for document %s', document.pk)
+
+    try:
+        from relationships.services import classify_relationships
+        classify_relationships(document, manual_snapshot=manual_snapshot)
+    except Exception:
+        logger.exception('Relationship classification failed for document %s', document.pk)
+
+    _log_ai_activity(document, success=True)
 
 
 def _mark_failed(document, message, document_hash=''):
@@ -116,3 +134,28 @@ def _mark_failed(document, message, document_hash=''):
         document_hash=document_hash,
         last_ai_scan=timezone.now(),
     )
+    _log_ai_activity(document, success=False)
+
+
+def _log_ai_activity(document, success):
+    """Best-effort activity log + notification for the AI run's outcome."""
+    try:
+        from recommendations.models import ActivityLog
+        from recommendations.services import create_notification, log_activity
+
+        log_activity(
+            document.owner, ActivityLog.EventType.AI_PROCESSING, document=document,
+            description=f'AI processing {"completed" if success else "failed"} for "{document.title}"',
+        )
+        if success:
+            create_notification(
+                document.owner, f'AI analysis completed for "{document.title}".',
+                'ai_completed', link=f'/documents/{document.pk}/',
+            )
+        else:
+            create_notification(
+                document.owner, f'AI analysis failed for "{document.title}".',
+                'ai_failed', link=f'/documents/{document.pk}/',
+            )
+    except Exception:
+        logger.exception('Could not log AI activity/notification for document %s', document.pk)

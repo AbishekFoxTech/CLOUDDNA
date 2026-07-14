@@ -24,7 +24,11 @@
       <div class="input-group">
         <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
         <input type="text" name="q" value="{{ query }}" class="form-control"
-               placeholder="Title, category, tags, filename, description...">
+               placeholder="Title, tags, OCR text, summary, keywords...">
+        <select name="match" class="form-select flex-grow-0" style="max-width: 90px;" title="How multiple search words combine">
+          <option value="any" {% if match_mode == 'any' %}selected{% endif %}>OR</option>
+          <option value="all" {% if match_mode == 'all' %}selected{% endif %}>AND</option>
+        </select>
       </div>
     </div>
     <div class="col-6 col-lg-2">
@@ -50,6 +54,9 @@
       <select name="sort" class="form-select" onchange="this.form.submit()">
         <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest first</option>
         <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+        <option value="alphabetical" {% if selected_sort == 'alphabetical' %}selected{% endif %}>Alphabetical</option>
+        <option value="most_similar" {% if selected_sort == 'most_similar' %}selected{% endif %}>Most Similar</option>
+        <option value="most_viewed" {% if selected_sort == 'most_viewed' %}selected{% endif %}>Most Viewed</option>
       </select>
     </div>
     <div class="col-6 col-lg-2 d-flex gap-2">
@@ -59,9 +66,17 @@
         <i class="bi bi-x-lg"></i>
       </a>
     </div>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small fw-semibold mb-1">Uploaded from</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-control" onchange="this.form.submit()">
+    </div>
+    <div class="col-6 col-lg-3">
+      <label class="form-label small fw-semibold mb-1">Uploaded to</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-control" onchange="this.form.submit()">
+    </div>
     {% if not show_favorites %}
-      <div class="col-12">
-        <div class="form-check mt-1">
+      <div class="col-12 col-lg-6 d-flex align-items-center">
+        <div class="form-check mt-3">
           <input type="checkbox" class="form-check-input" name="favorites" value="1" id="favOnly"
                  {% if request.GET.favorites == '1' %}checked{% endif %}
                  onchange="this.form.submit()">

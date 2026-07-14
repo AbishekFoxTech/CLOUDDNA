@@ -39,6 +39,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'js/theme.js' %}"></script>
+  {% if user.is_authenticated %}
+    <script>window.CDNA_MARK_ALL_NOTIFICATIONS_READ_URL = "{% url 'recommendations:mark_all_notifications_read' %}";</script>
+    <script src="{% static 'js/notifications.js' %}"></script>
+  {% endif %}
   {% block extra_js %}{% endblock %}
 </body>
 </html>

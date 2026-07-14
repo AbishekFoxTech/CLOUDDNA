@@ -16,6 +16,9 @@
     <a class="nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}" href="{% url 'documents:search' %}">
       <i class="bi bi-search"></i> Search
     </a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'dashboard:analytics' %}">
+      <i class="bi bi-bar-chart-line"></i> Analytics
+    </a>
     <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'accounts:profile' %}">
       <i class="bi bi-person"></i> Profile
     </a>
@@ -31,14 +34,14 @@
 
     <hr>
     <div class="px-2 text-uppercase small fw-semibold" style="color: var(--cdna-text-muted);">Intelligence</div>
-    <a class="nav-link disabled" href="#" tabindex="-1">
-      <i class="bi bi-cpu"></i> AI Engine
+    <a class="nav-link {% if request.resolver_match.url_name == 'graph' %}active{% endif %}" href="{% url 'relationships:graph' %}">
+      <i class="bi bi-diagram-3"></i> Relationship Graph
     </a>
-    <a class="nav-link disabled" href="#" tabindex="-1">
+    <a class="nav-link {% if request.resolver_match.url_name == 'home' and request.resolver_match.app_name == 'recommendations' %}active{% endif %}" href="{% url 'recommendations:home' %}">
       <i class="bi bi-lightbulb"></i> Recommendations
     </a>
-    <a class="nav-link disabled" href="#" tabindex="-1">
-      <i class="bi bi-diagram-3"></i> Relationships
+    <a class="nav-link {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}" href="{% url 'recommendations:activity_log' %}">
+      <i class="bi bi-clock-history"></i> Activity Log
     </a>
 
     {% if user.is_staff %}

@@ -5,38 +5,53 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import FileResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from recommendations.models import ActivityLog
+from recommendations.services import log_activity
 from relationships.models import DocumentRelationship
 
 from .forms import DocumentRenameForm, DocumentUploadForm
 from .models import Document
+
+SEARCH_FIELDS = [
+    'title', 'category', 'tags', 'original_filename', 'description',
+    'extracted_text', 'keywords', 'summary', 'detected_category',
+]
 
 
 def _is_ajax(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
 
+def _term_query(term):
+    query = Q()
+    for field in SEARCH_FIELDS:
+        query |= Q(**{f'{field}__icontains': term})
+    return query
+
+
 def _filtered_documents(request, force_favorites=False):
     qs = Document.objects.filter(owner=request.user)
 
     query = request.GET.get('q', '').strip()
+    match_mode = request.GET.get('match', 'any')
     if query:
-        qs = qs.filter(
-            Q(title__icontains=query)
-            | Q(category__icontains=query)
-            | Q(tags__icontains=query)
-            | Q(original_filename__icontains=query)
-            | Q(description__icontains=query)
-            | Q(extracted_text__icontains=query)
-            | Q(keywords__icontains=query)
-            | Q(summary__icontains=query)
-            | Q(detected_category__icontains=query)
-        )
+        terms = query.split()
+        term_queries = [_term_query(term) for term in terms]
+        if match_mode == 'all':
+            combined = term_queries[0]
+            for term_query in term_queries[1:]:
+                combined &= term_query
+        else:
+            combined = term_queries[0]
+            for term_query in term_queries[1:]:
+                combined |= term_query
+        qs = qs.filter(combined)
 
     category = request.GET.get('category', '').strip()
     if category:
@@ -46,12 +61,37 @@ def _filtered_documents(request, force_favorites=False):
     if file_type:
         qs = qs.filter(file_type=file_type)
 
+    date_from = request.GET.get('date_from', '').strip()
+    if date_from:
+        qs = qs.filter(uploaded_at__date__gte=date_from)
+
+    date_to = request.GET.get('date_to', '').strip()
+    if date_to:
+        qs = qs.filter(uploaded_at__date__lte=date_to)
+
     show_favorites = force_favorites or request.GET.get('favorites') == '1'
     if show_favorites:
         qs = qs.filter(favorite=True)
 
     sort = request.GET.get('sort', 'newest')
-    qs = qs.order_by('uploaded_at' if sort == 'oldest' else '-uploaded_at')
+    if sort == 'oldest':
+        qs = qs.order_by('uploaded_at')
+    elif sort == 'alphabetical':
+        qs = qs.order_by('title')
+    elif sort == 'most_similar':
+        qs = qs.order_by('-similarity_score')
+    elif sort == 'most_viewed':
+        qs = qs.annotate(
+            view_count=Count('activity_logs', filter=Q(activity_logs__event_type=ActivityLog.EventType.VIEW))
+        ).order_by('-view_count')
+    else:
+        qs = qs.order_by('-uploaded_at')
+
+    if query:
+        log_activity(
+            request.user, ActivityLog.EventType.SEARCH,
+            description=f'Searched for "{query}" ({match_mode.upper()})',
+        )
 
     return qs, show_favorites
 
@@ -83,9 +123,12 @@ def _render_document_list(request, page_title, force_favorites=False, is_search_
         'show_favorites': show_favorites,
         'is_search_page': is_search_page,
         'query': request.GET.get('q', ''),
+        'match_mode': request.GET.get('match', 'any'),
         'selected_category': request.GET.get('category', ''),
         'selected_file_type': request.GET.get('file_type', ''),
         'selected_sort': request.GET.get('sort', 'newest'),
+        'date_from': request.GET.get('date_from', ''),
+        'date_to': request.GET.get('date_to', ''),
         'query_params': query_params,
     })
 
@@ -138,12 +181,34 @@ def document_upload(request):
 
 @login_required
 def document_detail(request, pk):
+    from recommendations.services import get_recommendations_for_user
+
     document = get_object_or_404(Document, pk=pk, owner=request.user)
-    related_documents = DocumentRelationship.get_related_documents(document, limit=3)
+
+    log_activity(
+        request.user, ActivityLog.EventType.VIEW, document=document,
+        description=f'Viewed "{document.title}"',
+    )
+
+    related_documents = DocumentRelationship.get_related_documents(document, limit=5)
+    related_ids = {doc.pk for doc, _score, _type, _rel_pk in related_documents}
+    recommended = [
+        (doc, reason) for doc, reason in get_recommendations_for_user(request.user, limit=8)
+        if doc.pk != document.pk and doc.pk not in related_ids
+    ][:5]
+    activity = ActivityLog.objects.filter(document=document).select_related('user')[:20]
+    other_documents = (
+        Document.objects.filter(owner=request.user)
+        .exclude(pk__in=related_ids | {document.pk})
+        .only('pk', 'title')
+    )
 
     return render(request, 'documents/detail.html', {
         'document': document,
         'related_documents': related_documents,
+        'recommended_documents': recommended,
+        'document_activity': activity,
+        'other_documents': other_documents,
     })
 
 
@@ -152,9 +217,14 @@ def document_rename(request, pk):
     document = get_object_or_404(Document, pk=pk, owner=request.user)
 
     if request.method == 'POST':
+        old_title = document.title
         form = DocumentRenameForm(request.POST, instance=document)
         if form.is_valid():
             form.save()
+            log_activity(
+                request.user, ActivityLog.EventType.RENAME, document=document,
+                description=f'Renamed "{old_title}" to "{document.title}"',
+            )
             messages.success(request, 'Document renamed successfully.')
             return redirect('documents:detail', pk=document.pk)
     else:
@@ -168,6 +238,13 @@ def document_delete(request, pk):
     document = get_object_or_404(Document, pk=pk, owner=request.user)
     if request.method == 'POST':
         title = document.title
+        # Logged with document=None (not the soon-to-be-deleted document):
+        # ActivityLog.document cascades on delete, which would otherwise
+        # wipe this very record along with the rest of the doc's history.
+        log_activity(
+            request.user, ActivityLog.EventType.DELETE,
+            description=f'Deleted "{title}"',
+        )
         document.file.delete(save=False)
         document.delete()
         messages.success(request, f'"{title}" was deleted.')
@@ -182,13 +259,21 @@ def document_toggle_favorite(request, pk):
     document.favorite = not document.favorite
     document.save(update_fields=['favorite'])
 
+    action = 'added to' if document.favorite else 'removed from'
+    log_activity(
+        request.user, ActivityLog.EventType.FAVORITE, document=document,
+        description=f'"{document.title}" {action} favorites',
+    )
+    from recommendations.services import create_notification
+    create_notification(
+        request.user, f'"{document.title}" {action} favorites.', 'favorite_updated',
+        link=f'/documents/{document.pk}/',
+    )
+
     if _is_ajax(request):
         return JsonResponse({'favorite': document.favorite})
 
-    messages.success(
-        request,
-        f'"{document.title}" {"added to" if document.favorite else "removed from"} favorites.',
-    )
+    messages.success(request, f'"{document.title}" {action} favorites.')
     return redirect(request.META.get('HTTP_REFERER') or reverse('documents:list'))
 
 
@@ -196,6 +281,11 @@ def document_toggle_favorite(request, pk):
 def document_download(request, pk):
     document = get_object_or_404(Document, pk=pk, owner=request.user)
     filename = document.original_filename or os.path.basename(document.file.name)
+
+    log_activity(
+        request.user, ActivityLog.EventType.DOWNLOAD, document=document,
+        description=f'Downloaded "{document.title}"',
+    )
 
     if settings.USE_CLOUDINARY:
         upstream = requests.get(document.cloudinary_url, stream=True, timeout=15)
